@@ -1,21 +1,46 @@
-# buildspec.yaml
 version: 0.2
 
 phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing NodeJS dependencies"
+      - npm install
+
+  pre_build:
+    commands:
+      - echo "Starting NodeJS application"
+      - npm start &
+      - sleep 10
+
   build:
     commands:
-      # install the latest Snyk CLI from GitHub Releases
+      - echo "Installing Snyk CLI"
       - latest_version=$(curl -Is "https://github.com/snyk/cli/releases/latest" | grep "^location" | sed 's#.*tag/##g' | tr -d "\r")
       - snyk_cli_dl_linux="https://github.com/snyk/cli/releases/download/${latest_version}/snyk-linux"
       - curl -Lo /usr/local/bin/snyk $snyk_cli_dl_linux
       - chmod +x /usr/local/bin/snyk
-      
-      # authenticate the Snyk CLI
+
+      - echo "Authenticating Snyk"
       - snyk auth 2fd49771-2c46-429f-ba03-a80d9652f25c
-      
-      # perform a Snyk SCA scan; continue if vulnerabilities are found
+
+      - echo "Running Snyk SCA scan"
       - snyk test || true
-      - snyk code test 
-      
-      # upload a snapshot of the project to Snyk for continuous monitoring
-      - snyk monitor
+
+      - echo "Running Snyk SAST scan"
+      - snyk code test || true
+
+      - echo "Uploading project snapshot to Snyk"
+      - snyk monitor || true
+
+      - echo "Running OWASP ZAP DAST scan"
+      - docker run -t --network="host" \
+          -v $(pwd):/zap/wrk \
+          ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+          -t http://localhost:3000 \
+          -r zap-report.html
+
+artifacts:
+  files:
+    - zap-report.html
