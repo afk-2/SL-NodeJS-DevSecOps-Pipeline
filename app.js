@@ -37,3 +37,14 @@ function printLine(required, text){
     if(required){ console.log((String.fromCharCode(10004)+" "+text).green);}
     else{console.log((String.fromCharCode(10006)+" "+text).red);}
 }
+
+const http = require('http');
+
+const PORT = process.env.PORT || 3000;
+
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Weather app running\n');
+}).listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
+});
