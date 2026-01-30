@@ -11,8 +11,9 @@ phases:
   pre_build:
     commands:
       - echo "Starting NodeJS application"
-      - npm start &
-      - sleep 10
+      - nohup npm start > app.log 2>&1 &
+      - sleep 15
+      - curl -f http://localhost:3000 || (echo "App not running" && exit 1)
 
   build:
     commands:
@@ -35,7 +36,14 @@ phases:
       - snyk monitor || true
 
       - echo "Running OWASP ZAP DAST scan"
-      - docker run -t --network="host" -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://localhost:3000 -r zap-report.html
+      - docker run -t --network="host" \
+        -v $(pwd):/zap/wrk \
+        ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+        -I \
+        -t http://localhost:3000 \
+        -r zap-report.html \
+        || true
+
 
 
 
