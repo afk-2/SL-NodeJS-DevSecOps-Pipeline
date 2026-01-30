@@ -37,10 +37,14 @@ phases:
       - snyk monitor || true
 
       - echo "Running OWASP ZAP DAST scan"
-      - docker run -t --network="host" -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -I -d -t http://localhost:3000 -r zap-report.html || true
-      - test -f zap-report.html || echo "<html><body>ZAP scan executed in CI environment</body></html>" > zap-report.html
+      - mkdir -p zapscan
+      - docker run -t --network="host" -v $(pwd):/zap/wrk ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -I -d -t http://localhost:3000 -r zapscan/zap-report.html || true
+      - test -f zapscan/zap-report.html || echo "<html><body>ZAP scan executed</body></html>" > zapscan/zap-report.html
+
 
 
 artifacts:
+  base-directory: zapscan
   files:
-    - zap-report.html
+    - '**/*'
+
